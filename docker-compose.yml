@@ -1,0 +1,44 @@
+name: document-archive
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: archive
+      POSTGRES_USER: archive
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or the environment}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U archive -d archive"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  archive:
+    build:
+      context: .
+      dockerfile: src/Archive/Archive.Api/Dockerfile
+    environment:
+      ConnectionStrings__Archive: Host=postgres;Database=archive;Username=archive;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or the environment}
+    volumes:
+      - files:/data/files
+    ports:
+      - "${ARCHIVE_PORT:-8081}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  export:
+    build:
+      context: .
+      dockerfile: src/Export/Export.Api/Dockerfile
+    ports:
+      - "${EXPORT_PORT:-8082}:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  files:
