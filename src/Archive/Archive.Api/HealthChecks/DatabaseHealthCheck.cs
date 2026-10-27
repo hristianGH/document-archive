@@ -3,14 +3,9 @@ using Npgsql;
 
 namespace Archive.Api.HealthChecks;
 
-public class DatabaseHealthCheck : IHealthCheck
+public class DatabaseHealthCheck(string connectionString) : IHealthCheck
 {
-    private readonly string _connectionString;
-
-    public DatabaseHealthCheck(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
+    private readonly string _connectionString = connectionString;
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {

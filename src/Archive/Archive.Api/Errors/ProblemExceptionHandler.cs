@@ -4,18 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Archive.Api.Errors;
 
-public class ProblemExceptionHandler : IExceptionHandler
+public class ProblemExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<ProblemExceptionHandler> logger) : IExceptionHandler
 {
     private const string UnexpectedErrorMessage = "Something went wrong on the server. Please try again later.";
 
-    private readonly IProblemDetailsService _problemDetailsService;
-    private readonly ILogger<ProblemExceptionHandler> _logger;
-
-    public ProblemExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<ProblemExceptionHandler> logger)
-    {
-        _problemDetailsService = problemDetailsService;
-        _logger = logger;
-    }
+    private readonly IProblemDetailsService _problemDetailsService = problemDetailsService;
+    private readonly ILogger<ProblemExceptionHandler> _logger = logger;
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {

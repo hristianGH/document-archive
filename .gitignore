@@ -59,3 +59,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Local part files (Storage:FilesPath in Development)
+.data/

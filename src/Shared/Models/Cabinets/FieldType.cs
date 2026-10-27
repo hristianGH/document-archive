@@ -1,6 +1,6 @@
 namespace Shared.Models.Cabinets;
 
-public enum FieldTypeDto
+public enum FieldType
 {
     Text,
     Number,

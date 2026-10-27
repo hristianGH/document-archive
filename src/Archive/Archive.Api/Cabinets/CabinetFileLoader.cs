@@ -9,8 +9,7 @@ public static class CabinetFileLoader
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-        RespectNullableAnnotations = true,
-        RespectRequiredConstructorParameters = true
+        RespectNullableAnnotations = true
     };
 
     public static CabinetCatalog Load(string path)
@@ -33,5 +32,8 @@ public static class CabinetFileLoader
         }
     }
 
-    private record CabinetsFile(IReadOnlyList<Cabinet> Cabinets);
+    private class CabinetsFile
+    {
+        public required IReadOnlyList<Cabinet> Cabinets { get; init; }
+    }
 }

@@ -1,5 +1,5 @@
-using Archive.Api.Mappers;
-using Archive.Core.Cabinets;
+using Archive.Api.Cabinets;
+using Archive.Core.Handlers;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models.Cabinets;
 
@@ -7,27 +7,22 @@ namespace Archive.Api.Controllers;
 
 [ApiController]
 [Route("cabinets")]
-public class CabinetsController : ControllerBase
+public class CabinetsController(ICabinetHandler cabinetHandler) : ControllerBase
 {
-    private readonly CabinetCatalog _cabinets;
-
-    public CabinetsController(CabinetCatalog cabinets)
-    {
-        _cabinets = cabinets;
-    }
+    private readonly ICabinetHandler _cabinetHandler = cabinetHandler;
 
     [HttpGet]
-    [ProducesResponseType<IReadOnlyList<CabinetDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<IReadOnlyList<CabinetResponse>>(StatusCodes.Status200OK)]
     public IActionResult GetAll()
     {
-        return Ok(_cabinets.All.Select(c => c.ToDto()).ToList());
+        return Ok(_cabinetHandler.GetAll().Select(c => c.ToResponse()).ToList());
     }
 
     [HttpGet("{cabinet}")]
-    [ProducesResponseType<CabinetDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<CabinetResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public IActionResult Get(string cabinet)
     {
-        return Ok(_cabinets.Get(cabinet).ToDto());
+        return Ok(_cabinetHandler.Get(cabinet).ToResponse());
     }
 }

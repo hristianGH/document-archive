@@ -17,6 +17,7 @@ RUN mkdir -p /data/files && chown app:app /data/files
 COPY --from=build /app .
 COPY fixtures/cabinets.json config/cabinets.json
 ENV Cabinets__Path=/app/config/cabinets.json
+ENV Storage__FilesPath=/data/files
 USER app
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Archive.Api.dll"]
