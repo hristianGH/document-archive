@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: archive
       POSTGRES_USER: archive
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or the environment}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

@@ -39,6 +39,10 @@ ScaffoldingReadMe.txt
 # dotenv environment variables file
 .env
 
+# Visual Studio local state (search index, open files, caches)
+.vs/
+*.user
+
 # Others
 ~$*
 *~
