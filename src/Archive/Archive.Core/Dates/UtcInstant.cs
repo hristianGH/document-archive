@@ -15,4 +15,7 @@ public static class UtcInstant
     public static bool TryParse(string? value, out DateTime utc) =>
         DateTime.TryParseExact(value, Formats, CultureInfo.InvariantCulture,
             DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out utc);
+
+    public static DateTime ToWholeSeconds(DateTimeOffset instant) =>
+        new(instant.UtcTicks - instant.UtcTicks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
 }

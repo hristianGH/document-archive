@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Archive.Data;
 
-public class ArchiveDbContext : DbContext
+public class ArchiveDbContext(DbContextOptions<ArchiveDbContext> options) : DbContext(options)
 {
-    public ArchiveDbContext(DbContextOptions<ArchiveDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<DocumentEntity> Documents => Set<DocumentEntity>();
 
     public DbSet<PartEntity> Parts => Set<PartEntity>();

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Archive.Core.Cabinets;
 
 namespace Archive.Api.Cabinets;
@@ -9,8 +10,17 @@ public static class CabinetFileLoader
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
-        RespectNullableAnnotations = true
+        RespectNullableAnnotations = true,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { RequireNonNullableProperties } }
     };
+
+    private static void RequireNonNullableProperties(JsonTypeInfo typeInfo)
+    {
+        foreach (var property in typeInfo.Properties)
+        {
+            property.IsRequired = !property.IsSetNullable;
+        }
+    }
 
     public static CabinetCatalog Load(string path)
     {
@@ -34,6 +44,6 @@ public static class CabinetFileLoader
 
     private class CabinetsFile
     {
-        public required IReadOnlyList<Cabinet> Cabinets { get; init; }
+        public IReadOnlyList<Cabinet> Cabinets { get; set; } = [];
     }
 }

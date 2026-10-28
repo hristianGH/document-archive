@@ -2,13 +2,13 @@ namespace Archive.Core.Documents;
 
 public class DocumentQuery
 {
-    public required string Cabinet { get; init; }
+    public string Cabinet { get; set; } = string.Empty;
 
-    public required DateTime FromUtc { get; init; }
+    public DateTime FromUtc { get; set; }
 
-    public required DateTime ToUtc { get; init; }
+    public DateTime ToUtc { get; set; }
 
-    public required int Page { get; init; }
+    public int Page { get; set; }
 
-    public required int PageSize { get; init; }
+    public int PageSize { get; set; }
 }

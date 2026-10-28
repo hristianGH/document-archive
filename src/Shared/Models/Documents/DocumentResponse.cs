@@ -4,17 +4,17 @@ namespace Shared.Models.Documents;
 
 public class DocumentResponse
 {
-    public required Guid Id { get; init; }
+    public Guid Id { get; set; }
 
-    public required string Cabinet { get; init; }
+    public string Cabinet { get; set; } = string.Empty;
 
-    public required string Title { get; init; }
+    public string Title { get; set; } = string.Empty;
 
-    public required DateTime StoredAt { get; init; }
+    public DateTime StoredAt { get; set; }
 
-    public required DateTime ModifiedAt { get; init; }
+    public DateTime ModifiedAt { get; set; }
 
-    public required JsonElement IndexValues { get; init; }
+    public JsonElement IndexValues { get; set; }
 
-    public required IReadOnlyList<PartResponse> Parts { get; init; }
+    public IReadOnlyList<PartResponse> Parts { get; set; } = [];
 }

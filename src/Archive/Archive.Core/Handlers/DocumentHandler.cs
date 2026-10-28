@@ -13,18 +13,13 @@ public class DocumentHandler(
     IPartFileStore partFileStore,
     PagingSettings pagingSettings) : IDocumentHandler
 {
-    private readonly IDocumentRepository _documentRepository = documentRepository;
-    private readonly ICabinetHandler _cabinetHandler = cabinetHandler;
-    private readonly IPartFileStore _partFileStore = partFileStore;
-    private readonly PagingSettings _pagingSettings = pagingSettings;
-
     public async Task<Document> GetAsync(Guid id, CancellationToken cancellationToken) =>
-        await _documentRepository.GetAsync(id, cancellationToken)
+        await documentRepository.GetAsync(id, cancellationToken)
             ?? throw new NotFoundException($"Document '{id}' was not found.");
 
     public async Task<PagedList<DocumentSummary>> GetPageAsync(string cabinet, string from, string to, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var cabinetName = _cabinetHandler.Get(cabinet).Name;
+        var cabinetName = cabinetHandler.Get(cabinet).Name;
         var fromUtc = ParseInstant(from, nameof(from));
         var toUtc = ParseInstant(to, nameof(to));
 
@@ -33,13 +28,13 @@ public class DocumentHandler(
             throw new InvalidInputException("'from' must be earlier than 'to'.");
         }
 
-        var size = Math.Min(pageSize, _pagingSettings.MaxPageSize);
+        var size = Math.Min(pageSize, pagingSettings.MaxPageSize);
         if ((long)(page - 1) * size > int.MaxValue)
         {
             throw new InvalidInputException($"'page' {page} is out of range.");
         }
 
-        return await _documentRepository.GetPageAsync(new DocumentQuery
+        return await documentRepository.GetPageAsync(new DocumentQuery
         {
             Cabinet = cabinetName,
             FromUtc = fromUtc,
@@ -51,10 +46,10 @@ public class DocumentHandler(
 
     public async Task<PartContent> GetPartContentAsync(Guid documentId, Guid partId, CancellationToken cancellationToken)
     {
-        var part = await _documentRepository.GetPartAsync(documentId, partId, cancellationToken)
+        var part = await documentRepository.GetPartAsync(documentId, partId, cancellationToken)
             ?? throw new NotFoundException($"Part '{partId}' of document '{documentId}' was not found.");
 
-        var content = _partFileStore.OpenRead(part.FilePath)
+        var content = partFileStore.OpenRead(part.FilePath)
             ?? throw new PartContentMissingException(partId);
 
         if (content.Length != part.Size)

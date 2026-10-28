@@ -9,13 +9,11 @@ namespace Archive.Api.Controllers;
 [Route("cabinets")]
 public class CabinetsController(ICabinetHandler cabinetHandler) : ControllerBase
 {
-    private readonly ICabinetHandler _cabinetHandler = cabinetHandler;
-
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<CabinetResponse>>(StatusCodes.Status200OK)]
     public IActionResult GetAll()
     {
-        return Ok(_cabinetHandler.GetAll().Select(c => c.ToResponse()).ToList());
+        return Ok(cabinetHandler.GetAll().Select(c => c.ToResponse()).ToList());
     }
 
     [HttpGet("{cabinet}")]
@@ -23,6 +21,6 @@ public class CabinetsController(ICabinetHandler cabinetHandler) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public IActionResult Get(string cabinet)
     {
-        return Ok(_cabinetHandler.Get(cabinet).ToResponse());
+        return Ok(cabinetHandler.Get(cabinet).ToResponse());
     }
 }

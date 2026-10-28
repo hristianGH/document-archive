@@ -2,13 +2,13 @@ namespace Shared.Models.Cabinets;
 
 public class IndexFieldResponse
 {
-    public required string Name { get; init; }
+    public string Name { get; set; } = string.Empty;
 
-    public required string Label { get; init; }
+    public string Label { get; set; } = string.Empty;
 
-    public required FieldType Type { get; init; }
+    public FieldType Type { get; set; }
 
-    public int? MaxLength { get; init; }
+    public int? MaxLength { get; set; }
 
-    public required bool Writable { get; init; }
+    public bool Writable { get; set; }
 }

@@ -4,8 +4,8 @@ namespace Archive.Core.Exceptions;
 
 public class PayloadTooLargeException : ArchiveException
 {
-    public PayloadTooLargeException(string message)
-        : base(HttpStatusCode.RequestEntityTooLarge, message)
+    public PayloadTooLargeException(string message, Exception? innerException = null)
+        : base(HttpStatusCode.RequestEntityTooLarge, message, innerException)
     {
     }
 }

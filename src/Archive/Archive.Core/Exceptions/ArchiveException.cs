@@ -4,8 +4,8 @@ namespace Archive.Core.Exceptions;
 
 public abstract class ArchiveException : Exception
 {
-    protected ArchiveException(HttpStatusCode statusCode, string message)
-        : base(message)
+    protected ArchiveException(HttpStatusCode statusCode, string message, Exception? innerException = null)
+        : base(message, innerException)
     {
         StatusCode = statusCode;
     }

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Archive.Api.Documents;
+using Archive.Api.Uploads;
 using Archive.Core.Dates;
 using Archive.Core.Handlers;
 using Microsoft.AspNetCore.Mvc;
@@ -10,19 +11,33 @@ using Shared.Models.Paging;
 namespace Archive.Api.Controllers;
 
 [ApiController]
-public class DocumentsController : ControllerBase
+public class DocumentsController(IDocumentHandler documentHandler, IUploadHandler uploadHandler) : ControllerBase
 {
-    private readonly IDocumentHandler _documentHandler;
-
-    public DocumentsController(IDocumentHandler documentHandler)
+    [HttpPost("cabinets/{cabinet}/uploads")]
+    [Consumes("multipart/form-data")]
+    [TypeFilter<UploadSizeLimitFilter>]
+    [ProducesResponseType<UploadResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Upload(
+        string cabinet,
+        [FromForm, Description("A writable text field of the cabinet; every stored document gets the folder name in it.")] string field,
+        [Description("The folder as a zip.")] IFormFile file,
+        CancellationToken cancellationToken)
     {
-        _documentHandler = documentHandler;
+        // Owns the upload stream and closes it; the handler's ZipArchive opens it with leaveOpen: true.
+        await using var zip = file.OpenReadStream();
+        var report = await uploadHandler.UploadAsync(cabinet, field, file.FileName, zip, cancellationToken);
+        return Ok(report.ToResponse());
     }
 
     [HttpGet("cabinets/{cabinet}/documents")]
     [ProducesResponseType<PagedResponse<DocumentListItemResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPage(
         string cabinet,
         [FromQuery, Description("Inclusive. " + UtcInstant.Description)] string from,
@@ -31,16 +46,17 @@ public class DocumentsController : ControllerBase
         [FromQuery, Range(1, int.MaxValue), Description("Capped at the configured maximum page size; the response states the size used.")] int pageSize = 5,
         CancellationToken cancellationToken = default)
     {
-        var result = await _documentHandler.GetPageAsync(cabinet, from, to, page, pageSize, cancellationToken);
+        var result = await documentHandler.GetPageAsync(cabinet, from, to, page, pageSize, cancellationToken);
         return Ok(result.ToResponse());
     }
 
     [HttpGet("documents/{id:guid}")]
     [ProducesResponseType<DocumentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
-        var document = await _documentHandler.GetAsync(id, cancellationToken);
+        var document = await documentHandler.GetAsync(id, cancellationToken);
         return Ok(document.ToResponse());
     }
 
@@ -50,7 +66,7 @@ public class DocumentsController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPartContent(Guid id, Guid partId, CancellationToken cancellationToken)
     {
-        var part = await _documentHandler.GetPartContentAsync(id, partId, cancellationToken);
+        var part = await documentHandler.GetPartContentAsync(id, partId, cancellationToken);
         return File(part.Content, "application/octet-stream", part.FileName);
     }
 }

@@ -2,17 +2,17 @@ namespace Archive.Core.Documents;
 
 public class DocumentSummary
 {
-    public required Guid Id { get; init; }
+    public Guid Id { get; set; }
 
-    public required string Cabinet { get; init; }
+    public string Cabinet { get; set; } = string.Empty;
 
-    public required string Title { get; init; }
+    public string Title { get; set; } = string.Empty;
 
-    public required DateTime StoredAt { get; init; }
+    public DateTime StoredAt { get; set; }
 
-    public required DateTime ModifiedAt { get; init; }
+    public DateTime ModifiedAt { get; set; }
 
-    public required string IndexValuesJson { get; init; }
+    public string IndexValuesJson { get; set; } = string.Empty;
 
-    public required int PartCount { get; init; }
+    public int PartCount { get; set; }
 }

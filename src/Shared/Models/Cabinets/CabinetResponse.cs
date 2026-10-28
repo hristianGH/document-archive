@@ -2,9 +2,9 @@ namespace Shared.Models.Cabinets;
 
 public class CabinetResponse
 {
-    public required string Name { get; init; }
+    public string Name { get; set; } = string.Empty;
 
-    public required string DisplayName { get; init; }
+    public string DisplayName { get; set; } = string.Empty;
 
-    public required IReadOnlyList<IndexFieldResponse> Fields { get; init; }
+    public IReadOnlyList<IndexFieldResponse> Fields { get; set; } = [];
 }

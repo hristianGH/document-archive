@@ -1,21 +1,15 @@
 using Archive.Core.Documents;
 using Archive.Core.Paging;
 using Archive.Core.Repositories;
+using Archive.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Archive.Data.Repositories;
 
-public class DocumentRepository : IDocumentRepository
+public class DocumentRepository(ArchiveDbContext dbContext) : IDocumentRepository
 {
-    private readonly ArchiveDbContext _dbContext;
-
-    public DocumentRepository(ArchiveDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-
     public async Task<Document?> GetAsync(Guid id, CancellationToken cancellationToken) =>
-        await _dbContext.Documents
+        await dbContext.Documents
             .AsNoTracking()
             .Where(d => d.Id == id)
             .Select(d => new Document
@@ -42,7 +36,7 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task<PagedList<DocumentSummary>> GetPageAsync(DocumentQuery query, CancellationToken cancellationToken)
     {
-        var documents = _dbContext.Documents
+        var documents = dbContext.Documents
             .AsNoTracking()
             .Where(d => d.Cabinet == query.Cabinet && d.StoredAt >= query.FromUtc && d.StoredAt < query.ToUtc);
 
@@ -74,7 +68,7 @@ public class DocumentRepository : IDocumentRepository
     }
 
     public async Task<Part?> GetPartAsync(Guid documentId, Guid partId, CancellationToken cancellationToken) =>
-        await _dbContext.Parts
+        await dbContext.Parts
             .AsNoTracking()
             .Where(p => p.DocumentId == documentId && p.Id == partId)
             .Select(p => new Part
@@ -86,4 +80,35 @@ public class DocumentRepository : IDocumentRepository
                 FilePath = p.FilePath
             })
             .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task AddAsync(Document document, CancellationToken cancellationToken)
+    {
+        dbContext.Documents.Add(new DocumentEntity
+        {
+            Id = document.Id,
+            Cabinet = document.Cabinet,
+            Title = document.Title,
+            StoredAt = document.StoredAt,
+            ModifiedAt = document.ModifiedAt,
+            IndexValues = document.IndexValuesJson,
+            Parts = [.. document.Parts.Select(p => new PartEntity
+            {
+                Id = p.Id,
+                DocumentId = document.Id,
+                Position = p.Position,
+                FileName = p.FileName,
+                Size = p.Size,
+                FilePath = p.FilePath
+            })]
+        });
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        finally
+        {
+            dbContext.ChangeTracker.Clear();
+        }
+    }
 }

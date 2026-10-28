@@ -2,11 +2,11 @@ namespace Archive.Core.Cabinets;
 
 public class Cabinet
 {
-    public required string Name { get; init; }
+    public string Name { get; set; } = string.Empty;
 
-    public required string DisplayName { get; init; }
+    public string DisplayName { get; set; } = string.Empty;
 
-    public required IReadOnlyList<IndexField> Fields { get; init; }
+    public IReadOnlyList<IndexField> Fields { get; set; } = [];
 
-    public IndexField? FindField(string name) => Fields.FirstOrDefault(f => f.Name == name);
+    public IndexField? FindField(string name) => Fields.FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
 }

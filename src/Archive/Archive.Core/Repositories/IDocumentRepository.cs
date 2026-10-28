@@ -10,4 +10,6 @@ public interface IDocumentRepository
     Task<PagedList<DocumentSummary>> GetPageAsync(DocumentQuery query, CancellationToken cancellationToken);
 
     Task<Part?> GetPartAsync(Guid documentId, Guid partId, CancellationToken cancellationToken);
+
+    Task AddAsync(Document document, CancellationToken cancellationToken);
 }

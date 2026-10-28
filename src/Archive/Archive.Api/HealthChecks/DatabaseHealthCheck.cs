@@ -5,13 +5,11 @@ namespace Archive.Api.HealthChecks;
 
 public class DatabaseHealthCheck(string connectionString) : IHealthCheck
 {
-    private readonly string _connectionString = connectionString;
-
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
-            await using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
             await connection.OpenAsync(cancellationToken);
             await using var command = new NpgsqlCommand("SELECT 1", connection);
             await command.ExecuteScalarAsync(cancellationToken);

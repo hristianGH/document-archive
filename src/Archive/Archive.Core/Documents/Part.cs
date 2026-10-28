@@ -2,13 +2,13 @@ namespace Archive.Core.Documents;
 
 public class Part
 {
-    public required Guid Id { get; init; }
+    public Guid Id { get; set; }
 
-    public required int Position { get; init; }
+    public int Position { get; set; }
 
-    public required string FileName { get; init; }
+    public string FileName { get; set; } = string.Empty;
 
-    public required long Size { get; init; }
+    public long Size { get; set; }
 
-    public required string FilePath { get; init; }
+    public string FilePath { get; set; } = string.Empty;
 }

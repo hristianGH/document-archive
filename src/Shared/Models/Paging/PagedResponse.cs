@@ -2,11 +2,11 @@ namespace Shared.Models.Paging;
 
 public class PagedResponse<T>
 {
-    public required IReadOnlyList<T> Items { get; init; }
+    public IReadOnlyList<T> Items { get; set; } = [];
 
-    public required int Page { get; init; }
+    public int Page { get; set; }
 
-    public required int PageSize { get; init; }
+    public int PageSize { get; set; }
 
-    public required int TotalCount { get; init; }
+    public int TotalCount { get; set; }
 }
