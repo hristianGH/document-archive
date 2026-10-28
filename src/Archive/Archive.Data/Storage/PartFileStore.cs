@@ -1,4 +1,3 @@
-using Archive.Core.Logging;
 using Archive.Core.Storage;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +8,7 @@ public class PartFileStore(string rootPath, ILogger<PartFileStore> logger) : IPa
     public Stream? OpenRead(string filePath)
     {
         Stream? stream = null;
-        logger.LogDebug("Start PartFileStore.OpenRead with params filePath={FilePath}", filePath);
+        logger.LogInformation("Start PartFileStore.OpenRead with params filePath={FilePath}", filePath);
         try
         {
             stream = new FileStream(Path.Combine(rootPath, filePath), new FileStreamOptions
@@ -27,19 +26,19 @@ public class PartFileStore(string rootPath, ILogger<PartFileStore> logger) : IPa
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error PartFileStore.OpenRead with params filePath={FilePath}", filePath);
+            logger.LogError(ex, "Error PartFileStore.OpenRead with params filePath={FilePath}", filePath);
             throw;
         }
         finally
         {
-            logger.LogDebug("End PartFileStore.OpenRead with params filePath={FilePath}; found={Found}", filePath, stream is not null);
+            logger.LogInformation("End PartFileStore.OpenRead with params filePath={FilePath}; found={Found}", filePath, stream is not null);
         }
     }
 
     public async Task<long> WriteAsync(string filePath, Stream content, CancellationToken cancellationToken)
     {
         long? bytes = null;
-        logger.LogDebug("Start PartFileStore.WriteAsync with params filePath={FilePath}", filePath);
+        logger.LogInformation("Start PartFileStore.WriteAsync with params filePath={FilePath}", filePath);
         try
         {
             var fullPath = Path.Combine(rootPath, filePath);
@@ -58,18 +57,18 @@ public class PartFileStore(string rootPath, ILogger<PartFileStore> logger) : IPa
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error PartFileStore.WriteAsync with params filePath={FilePath}", filePath);
+            logger.LogError(ex, "Error PartFileStore.WriteAsync with params filePath={FilePath}", filePath);
             throw;
         }
         finally
         {
-            logger.LogDebug("End PartFileStore.WriteAsync with params filePath={FilePath}; bytes={Bytes}", filePath, bytes);
+            logger.LogInformation("End PartFileStore.WriteAsync with params filePath={FilePath}; bytes={Bytes}", filePath, bytes);
         }
     }
 
     public void Delete(string filePath)
     {
-        logger.LogDebug("Start PartFileStore.Delete with params filePath={FilePath}", filePath);
+        logger.LogInformation("Start PartFileStore.Delete with params filePath={FilePath}", filePath);
         try
         {
             var fullPath = Path.Combine(rootPath, filePath);
@@ -86,12 +85,12 @@ public class PartFileStore(string rootPath, ILogger<PartFileStore> logger) : IPa
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error PartFileStore.Delete with params filePath={FilePath}", filePath);
+            logger.LogError(ex, "Error PartFileStore.Delete with params filePath={FilePath}", filePath);
             throw;
         }
         finally
         {
-            logger.LogDebug("End PartFileStore.Delete with params filePath={FilePath}", filePath);
+            logger.LogInformation("End PartFileStore.Delete with params filePath={FilePath}", filePath);
         }
     }
 }

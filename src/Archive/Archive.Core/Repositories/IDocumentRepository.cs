@@ -12,4 +12,6 @@ public interface IDocumentRepository
     Task<Part?> GetPartAsync(Guid documentId, Guid partId, CancellationToken cancellationToken);
 
     Task AddAsync(Document document, CancellationToken cancellationToken);
+
+    Task<bool> SetIndexValueAsync(Guid id, string fieldName, string valueJson, DateTime modifiedAt, CancellationToken cancellationToken);
 }

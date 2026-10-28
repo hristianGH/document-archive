@@ -23,6 +23,7 @@ public class UploadHandler(
 {
     private const int UnixFileTypeMask = 0xF000;
     private const int UnixSymlinkType = 0xA000;
+    private const int EndOfCentralDirectoryBytes = 22;
     private const string DamagedReason = "File is damaged in the zip.";
     private const string NotStoredReason = "Not stored because of a server error.";
     private const string NothingStoredMessage = "Nothing was stored; see the report for each failure.";
@@ -105,6 +106,11 @@ public class UploadHandler(
 
     private static async Task<ZipArchive> OpenZipAsync(Stream zip, CancellationToken cancellationToken)
     {
+        if (zip.Length < EndOfCentralDirectoryBytes)
+        {
+            throw new InvalidInputException("The file is not a valid zip.");
+        }
+
         try
         {
             // leaveOpen: the caller opened the stream and disposes it; ZipArchive must not close it.
@@ -147,7 +153,7 @@ public class UploadHandler(
     {
         var documentId = Guid.CreateVersion7();
         var parts = new List<Part>();
-        logger.LogDebug("Start UploadHandler.StoreAsync with params cabinet={Cabinet}, path={Path}, parts={PartCount}",
+        logger.LogInformation("Start UploadHandler.StoreAsync with params cabinet={Cabinet}, path={Path}, parts={PartCount}",
             cabinet, plannedDocument.Path, plannedDocument.Parts.Count);
         try
         {
@@ -192,7 +198,7 @@ public class UploadHandler(
         }
         finally
         {
-            logger.LogDebug("End UploadHandler.StoreAsync with params cabinet={Cabinet}, path={Path}; documentId={DocumentId}",
+            logger.LogInformation("End UploadHandler.StoreAsync with params cabinet={Cabinet}, path={Path}; documentId={DocumentId}",
                 cabinet, plannedDocument.Path, documentId);
         }
     }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Archive.Core.Documents;
 using Archive.Core.Paging;
 
@@ -10,4 +11,6 @@ public interface IDocumentHandler
     Task<PagedList<DocumentSummary>> GetPageAsync(string cabinet, string from, string to, int page, int pageSize, CancellationToken cancellationToken);
 
     Task<PartContent> GetPartContentAsync(Guid documentId, Guid partId, CancellationToken cancellationToken);
+
+    Task<Document> SetIndexValueAsync(Guid id, string field, JsonElement value, CancellationToken cancellationToken);
 }

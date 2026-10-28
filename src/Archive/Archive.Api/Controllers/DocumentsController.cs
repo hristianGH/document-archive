@@ -145,4 +145,36 @@ public class DocumentsController(IDocumentHandler documentHandler, IUploadHandle
                 id, partId, Stopwatch.GetElapsedTime(started).TotalMilliseconds, fileName);
         }
     }
+
+    [HttpPut("documents/{id:guid}/index-values/{field}")]
+    [ProducesResponseType<DocumentResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> SetIndexValue(
+        Guid id,
+        [Description("A writable field of the document's cabinet; case is ignored.")] string field,
+        SetIndexValueRequest request,
+        CancellationToken cancellationToken)
+    {
+        var started = Stopwatch.GetTimestamp();
+        DocumentResponse? response = null;
+        logger.LogInformation("Start DocumentsController.SetIndexValue with params id={Id}, field={Field}", id, field);
+        try
+        {
+            var document = await documentHandler.SetIndexValueAsync(id, field, request.Value, cancellationToken);
+            response = document.ToResponse();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            logger.LogMethodError(ex, "Error DocumentsController.SetIndexValue with params id={Id}, field={Field}", id, field);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End DocumentsController.SetIndexValue with params id={Id}, field={Field} in {ElapsedMs:0} ms; modifiedAt={ModifiedAt:O}",
+                id, field, Stopwatch.GetElapsedTime(started).TotalMilliseconds, response?.ModifiedAt);
+        }
+    }
 }

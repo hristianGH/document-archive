@@ -1,5 +1,4 @@
 using Archive.Core.Documents;
-using Archive.Core.Logging;
 using Archive.Core.Paging;
 using Archive.Core.Repositories;
 using Archive.Data.Entities;
@@ -13,7 +12,7 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
     public async Task<Document?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         Document? document = null;
-        logger.LogDebug("Start DocumentRepository.GetAsync with params id={Id}", id);
+        logger.LogInformation("Start DocumentRepository.GetAsync with params id={Id}", id);
         try
         {
             document = await dbContext.Documents
@@ -44,12 +43,12 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error DocumentRepository.GetAsync with params id={Id}", id);
+            logger.LogError(ex, "Error DocumentRepository.GetAsync with params id={Id}", id);
             throw;
         }
         finally
         {
-            logger.LogDebug("End DocumentRepository.GetAsync with params id={Id}; found={Found}, parts={PartCount}",
+            logger.LogInformation("End DocumentRepository.GetAsync with params id={Id}; found={Found}, parts={PartCount}",
                 id, document is not null, document?.Parts.Count);
         }
     }
@@ -57,7 +56,7 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
     public async Task<PagedList<DocumentSummary>> GetPageAsync(DocumentQuery query, CancellationToken cancellationToken)
     {
         PagedList<DocumentSummary>? result = null;
-        logger.LogDebug("Start DocumentRepository.GetPageAsync with params cabinet={Cabinet}, fromUtc={FromUtc:O}, toUtc={ToUtc:O}, page={Page}, pageSize={PageSize}",
+        logger.LogInformation("Start DocumentRepository.GetPageAsync with params cabinet={Cabinet}, fromUtc={FromUtc:O}, toUtc={ToUtc:O}, page={Page}, pageSize={PageSize}",
             query.Cabinet, query.FromUtc, query.ToUtc, query.Page, query.PageSize);
         try
         {
@@ -94,13 +93,13 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error DocumentRepository.GetPageAsync with params cabinet={Cabinet}, fromUtc={FromUtc:O}, toUtc={ToUtc:O}, page={Page}, pageSize={PageSize}",
+            logger.LogError(ex, "Error DocumentRepository.GetPageAsync with params cabinet={Cabinet}, fromUtc={FromUtc:O}, toUtc={ToUtc:O}, page={Page}, pageSize={PageSize}",
                 query.Cabinet, query.FromUtc, query.ToUtc, query.Page, query.PageSize);
             throw;
         }
         finally
         {
-            logger.LogDebug("End DocumentRepository.GetPageAsync with params cabinet={Cabinet}, fromUtc={FromUtc:O}, toUtc={ToUtc:O}, page={Page}, pageSize={PageSize}; items={ItemCount}, total={TotalCount}",
+            logger.LogInformation("End DocumentRepository.GetPageAsync with params cabinet={Cabinet}, fromUtc={FromUtc:O}, toUtc={ToUtc:O}, page={Page}, pageSize={PageSize}; items={ItemCount}, total={TotalCount}",
                 query.Cabinet, query.FromUtc, query.ToUtc, query.Page, query.PageSize,
                 result?.Items.Count, result?.TotalCount);
         }
@@ -109,7 +108,7 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
     public async Task<Part?> GetPartAsync(Guid documentId, Guid partId, CancellationToken cancellationToken)
     {
         Part? part = null;
-        logger.LogDebug("Start DocumentRepository.GetPartAsync with params documentId={DocumentId}, partId={PartId}", documentId, partId);
+        logger.LogInformation("Start DocumentRepository.GetPartAsync with params documentId={DocumentId}, partId={PartId}", documentId, partId);
         try
         {
             part = await dbContext.Parts
@@ -128,19 +127,19 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error DocumentRepository.GetPartAsync with params documentId={DocumentId}, partId={PartId}", documentId, partId);
+            logger.LogError(ex, "Error DocumentRepository.GetPartAsync with params documentId={DocumentId}, partId={PartId}", documentId, partId);
             throw;
         }
         finally
         {
-            logger.LogDebug("End DocumentRepository.GetPartAsync with params documentId={DocumentId}, partId={PartId}; found={Found}",
+            logger.LogInformation("End DocumentRepository.GetPartAsync with params documentId={DocumentId}, partId={PartId}; found={Found}",
                 documentId, partId, part is not null);
         }
     }
 
     public async Task AddAsync(Document document, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Start DocumentRepository.AddAsync with params id={Id}, cabinet={Cabinet}, parts={PartCount}",
+        logger.LogInformation("Start DocumentRepository.AddAsync with params id={Id}, cabinet={Cabinet}, parts={PartCount}",
             document.Id, document.Cabinet, document.Parts.Count);
         try
         {
@@ -167,15 +166,41 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
         }
         catch (Exception ex)
         {
-            logger.LogMethodError(ex, "Error DocumentRepository.AddAsync with params id={Id}, cabinet={Cabinet}, parts={PartCount}",
+            logger.LogError(ex, "Error DocumentRepository.AddAsync with params id={Id}, cabinet={Cabinet}, parts={PartCount}",
                 document.Id, document.Cabinet, document.Parts.Count);
             throw;
         }
         finally
         {
             dbContext.ChangeTracker.Clear();
-            logger.LogDebug("End DocumentRepository.AddAsync with params id={Id}, cabinet={Cabinet}, parts={PartCount}",
+            logger.LogInformation("End DocumentRepository.AddAsync with params id={Id}, cabinet={Cabinet}, parts={PartCount}",
                 document.Id, document.Cabinet, document.Parts.Count);
+        }
+    }
+
+    public async Task<bool> SetIndexValueAsync(Guid id, string fieldName, string valueJson, DateTime modifiedAt, CancellationToken cancellationToken)
+    {
+        int? rows = null;
+        logger.LogInformation("Start DocumentRepository.SetIndexValueAsync with params id={Id}, fieldName={FieldName}, modifiedAt={ModifiedAt:O}", id, fieldName, modifiedAt);
+        try
+        {
+            // One statement merges the key into the jsonb, so concurrent writes to other fields are kept.
+            rows = await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                UPDATE "Documents"
+                SET "IndexValues" = "IndexValues" || jsonb_build_object({fieldName}, {valueJson}::jsonb),
+                    "ModifiedAt" = {modifiedAt}
+                WHERE "Id" = {id}
+                """, cancellationToken);
+            return rows > 0;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error DocumentRepository.SetIndexValueAsync with params id={Id}, fieldName={FieldName}, modifiedAt={ModifiedAt:O}", id, fieldName, modifiedAt);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End DocumentRepository.SetIndexValueAsync with params id={Id}, fieldName={FieldName}, modifiedAt={ModifiedAt:O}; rows={Rows}", id, fieldName, modifiedAt, rows);
         }
     }
 }
