@@ -48,7 +48,8 @@ public static class ServiceRegistration
         var services = builder.Services;
 
         services.AddSingleton(CabinetFileLoader.Load(Path.Combine(builder.Environment.ContentRootPath, cabinetsPath)));
-        services.AddSingleton<IPartFileStore>(new PartFileStore(Path.GetFullPath(filesPath, builder.Environment.ContentRootPath)));
+        var fullFilesPath = Path.GetFullPath(filesPath, builder.Environment.ContentRootPath);
+        services.AddSingleton<IPartFileStore>(sp => new PartFileStore(fullFilesPath, sp.GetRequiredService<ILogger<PartFileStore>>()));
         services.AddSingleton(new PagingSettings { MaxPageSize = maxPageSize });
         services.AddSingleton(uploadSettings);
         services.AddSingleton(TimeProvider.System);

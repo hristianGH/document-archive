@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using Archive.Api.Documents;
 using Archive.Api.Uploads;
 using Archive.Core.Dates;
 using Archive.Core.Handlers;
+using Archive.Core.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models.Documents;
 using Shared.Models.Paging;
@@ -11,7 +13,7 @@ using Shared.Models.Paging;
 namespace Archive.Api.Controllers;
 
 [ApiController]
-public class DocumentsController(IDocumentHandler documentHandler, IUploadHandler uploadHandler) : ControllerBase
+public class DocumentsController(IDocumentHandler documentHandler, IUploadHandler uploadHandler, ILogger<DocumentsController> logger) : ControllerBase
 {
     [HttpPost("cabinets/{cabinet}/uploads")]
     [Consumes("multipart/form-data")]
@@ -27,10 +29,30 @@ public class DocumentsController(IDocumentHandler documentHandler, IUploadHandle
         [Description("The folder as a zip.")] IFormFile file,
         CancellationToken cancellationToken)
     {
-        // Owns the upload stream and closes it; the handler's ZipArchive opens it with leaveOpen: true.
-        await using var zip = file.OpenReadStream();
-        var report = await uploadHandler.UploadAsync(cabinet, field, file.FileName, zip, cancellationToken);
-        return Ok(report.ToResponse());
+        var started = Stopwatch.GetTimestamp();
+        UploadResponse? response = null;
+        logger.LogInformation("Start DocumentsController.Upload with params cabinet={Cabinet}, field={Field}, fileName={FileName}, fileBytes={FileBytes}",
+            cabinet, field, file.FileName, file.Length);
+        try
+        {
+            // Owns the upload stream and closes it; the handler's ZipArchive opens it with leaveOpen: true.
+            await using var zip = file.OpenReadStream();
+            var report = await uploadHandler.UploadAsync(cabinet, field, file.FileName, zip, cancellationToken);
+            response = report.ToResponse();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            logger.LogMethodError(ex, "Error DocumentsController.Upload with params cabinet={Cabinet}, field={Field}, fileName={FileName}, fileBytes={FileBytes}",
+                cabinet, field, file.FileName, file.Length);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End DocumentsController.Upload with params cabinet={Cabinet}, field={Field}, fileName={FileName}, fileBytes={FileBytes} in {ElapsedMs:0} ms; stored={StoredCount}, skipped={SkippedCount}, failed={FailedCount}",
+                cabinet, field, file.FileName, file.Length, Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+                response?.Stored.Count, response?.Skipped.Count, response?.Failed.Count);
+        }
     }
 
     [HttpGet("cabinets/{cabinet}/documents")]
@@ -46,8 +68,28 @@ public class DocumentsController(IDocumentHandler documentHandler, IUploadHandle
         [FromQuery, Range(1, int.MaxValue), Description("Capped at the configured maximum page size; the response states the size used.")] int pageSize = 5,
         CancellationToken cancellationToken = default)
     {
-        var result = await documentHandler.GetPageAsync(cabinet, from, to, page, pageSize, cancellationToken);
-        return Ok(result.ToResponse());
+        var started = Stopwatch.GetTimestamp();
+        PagedResponse<DocumentListItemResponse>? response = null;
+        logger.LogInformation("Start DocumentsController.GetPage with params cabinet={Cabinet}, from={From}, to={To}, page={Page}, pageSize={PageSize}",
+            cabinet, from, to, page, pageSize);
+        try
+        {
+            var result = await documentHandler.GetPageAsync(cabinet, from, to, page, pageSize, cancellationToken);
+            response = result.ToResponse();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            logger.LogMethodError(ex, "Error DocumentsController.GetPage with params cabinet={Cabinet}, from={From}, to={To}, page={Page}, pageSize={PageSize}",
+                cabinet, from, to, page, pageSize);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End DocumentsController.GetPage with params cabinet={Cabinet}, from={From}, to={To}, page={Page}, pageSize={PageSize} in {ElapsedMs:0} ms; items={ItemCount}, total={TotalCount}",
+                cabinet, from, to, page, pageSize, Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+                response?.Items.Count, response?.TotalCount);
+        }
     }
 
     [HttpGet("documents/{id:guid}")]
@@ -56,8 +98,25 @@ public class DocumentsController(IDocumentHandler documentHandler, IUploadHandle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
-        var document = await documentHandler.GetAsync(id, cancellationToken);
-        return Ok(document.ToResponse());
+        var started = Stopwatch.GetTimestamp();
+        DocumentResponse? response = null;
+        logger.LogInformation("Start DocumentsController.Get with params id={Id}", id);
+        try
+        {
+            var document = await documentHandler.GetAsync(id, cancellationToken);
+            response = document.ToResponse();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            logger.LogMethodError(ex, "Error DocumentsController.Get with params id={Id}", id);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End DocumentsController.Get with params id={Id} in {ElapsedMs:0} ms; parts={PartCount}",
+                id, Stopwatch.GetElapsedTime(started).TotalMilliseconds, response?.Parts.Count);
+        }
     }
 
     [HttpGet("documents/{id:guid}/parts/{partId:guid}/content")]
@@ -66,7 +125,24 @@ public class DocumentsController(IDocumentHandler documentHandler, IUploadHandle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPartContent(Guid id, Guid partId, CancellationToken cancellationToken)
     {
-        var part = await documentHandler.GetPartContentAsync(id, partId, cancellationToken);
-        return File(part.Content, "application/octet-stream", part.FileName);
+        var started = Stopwatch.GetTimestamp();
+        string? fileName = null;
+        logger.LogInformation("Start DocumentsController.GetPartContent with params id={Id}, partId={PartId}", id, partId);
+        try
+        {
+            var part = await documentHandler.GetPartContentAsync(id, partId, cancellationToken);
+            fileName = part.FileName;
+            return File(part.Content, "application/octet-stream", part.FileName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogMethodError(ex, "Error DocumentsController.GetPartContent with params id={Id}, partId={PartId}", id, partId);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End DocumentsController.GetPartContent with params id={Id}, partId={PartId} in {ElapsedMs:0} ms; fileName={FileName}",
+                id, partId, Stopwatch.GetElapsedTime(started).TotalMilliseconds, fileName);
+        }
     }
 }

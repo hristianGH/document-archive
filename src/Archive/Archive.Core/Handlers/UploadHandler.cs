@@ -3,6 +3,7 @@ using System.Text.Json;
 using Archive.Core.Dates;
 using Archive.Core.Documents;
 using Archive.Core.Exceptions;
+using Archive.Core.Logging;
 using Archive.Core.Repositories;
 using Archive.Core.Storage;
 using Archive.Core.Uploads;
@@ -28,60 +29,78 @@ public class UploadHandler(
 
     public async Task<UploadReport> UploadAsync(string cabinet, string field, string zipFileName, Stream zip, CancellationToken cancellationToken)
     {
-        var cabinetModel = cabinetHandler.Get(cabinet);
-        var indexField = IndexFieldValidator.GetWritableField(cabinetModel, field);
-        IndexFieldValidator.EnsureText(indexField);
-
-        if (zip.Length > uploadSettings.MaxZipBytes)
+        UploadReport? report = null;
+        logger.LogInformation("Start UploadHandler.UploadAsync with params cabinet={Cabinet}, field={Field}, zipFileName={ZipFileName}",
+            cabinet, field, zipFileName);
+        try
         {
-            throw new PayloadTooLargeException($"The zip is {zip.Length} bytes; the limit is {uploadSettings.MaxZipBytes} bytes.");
-        }
+            var cabinetModel = cabinetHandler.Get(cabinet);
+            var indexField = IndexFieldValidator.GetWritableField(cabinetModel, field);
+            IndexFieldValidator.EnsureText(indexField);
 
-        await using var archive = await OpenZipAsync(zip, cancellationToken);
-        EnsureWithinLimits(archive.Entries);
-
-        var plan = UploadPlanner.Plan([.. archive.Entries.Select(ToUploadEntry)], zipFileName);
-        if (string.IsNullOrWhiteSpace(plan.FolderName))
-        {
-            throw new InvalidInputException("The folder has no name. Give the zip file a name.");
-        }
-
-        IndexFieldValidator.ValidateText(indexField, plan.FolderName);
-        if (plan.Documents.Count == 0)
-        {
-            throw new InvalidInputException($"Folder '{plan.FolderName}' has nothing to store.");
-        }
-
-        var indexValuesJson = JsonSerializer.Serialize(new Dictionary<string, string> { [indexField.Name] = plan.FolderName });
-        var stored = new List<StoredDocument>();
-        var failed = new List<UploadReportEntry>();
-        var report = new UploadReport { FolderName = plan.FolderName, Field = indexField.Name, Stored = stored, Skipped = plan.Skipped, Failed = failed };
-
-        for (var i = 0; i < plan.Documents.Count; i++)
-        {
-            var plannedDocument = plan.Documents[i];
-            try
+            if (zip.Length > uploadSettings.MaxZipBytes)
             {
-                stored.Add(await StoreAsync(archive, cabinetModel.Name, plannedDocument, indexValuesJson, cancellationToken));
+                throw new PayloadTooLargeException($"The zip is {zip.Length} bytes; the limit is {uploadSettings.MaxZipBytes} bytes.");
             }
-            catch (InvalidDataException ex)
-            {
-                logger.LogWarning(ex, "Damaged file in {Path} for cabinet {Cabinet}", plannedDocument.Path, cabinetModel.Name);
-                failed.Add(new UploadReportEntry { Path = plannedDocument.Path, Reason = DamagedReason });
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                logger.LogError(ex, "Could not store {Path} in cabinet {Cabinet}; stopping the upload", plannedDocument.Path, cabinetModel.Name);
-                failed.AddRange(plan.Documents.Skip(i).Select(d => new UploadReportEntry { Path = d.Path, Reason = NotStoredReason }));
-                var message = $"The upload stopped because of a server error. {stored.Count} document(s) were stored; "
-                    + $"{plan.Documents.Count - i} were not stored. See the report; upload only the documents that were not stored.";
-                throw new UploadFailedException(message, report, ex);
-            }
-        }
 
-        return stored.Count == 0
-            ? throw new UploadFailedException(NothingStoredMessage, report)
-            : report;
+            await using var archive = await OpenZipAsync(zip, cancellationToken);
+            EnsureWithinLimits(archive.Entries);
+
+            var plan = UploadPlanner.Plan([.. archive.Entries.Select(ToUploadEntry)], zipFileName);
+            if (string.IsNullOrWhiteSpace(plan.FolderName))
+            {
+                throw new InvalidInputException("The folder has no name. Give the zip file a name.");
+            }
+
+            IndexFieldValidator.ValidateText(indexField, plan.FolderName);
+            if (plan.Documents.Count == 0)
+            {
+                throw new InvalidInputException($"Folder '{plan.FolderName}' has nothing to store.");
+            }
+
+            var indexValuesJson = JsonSerializer.Serialize(new Dictionary<string, string> { [indexField.Name] = plan.FolderName });
+            var stored = new List<StoredDocument>();
+            var failed = new List<UploadReportEntry>();
+            report = new UploadReport { FolderName = plan.FolderName, Field = indexField.Name, Stored = stored, Skipped = plan.Skipped, Failed = failed };
+
+            for (var i = 0; i < plan.Documents.Count; i++)
+            {
+                var plannedDocument = plan.Documents[i];
+                try
+                {
+                    stored.Add(await StoreAsync(archive, cabinetModel.Name, plannedDocument, indexValuesJson, cancellationToken));
+                }
+                catch (InvalidDataException ex)
+                {
+                    logger.LogWarning(ex, "Damaged file in {Path} for cabinet {Cabinet}", plannedDocument.Path, cabinetModel.Name);
+                    failed.Add(new UploadReportEntry { Path = plannedDocument.Path, Reason = DamagedReason });
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    logger.LogError(ex, "Could not store {Path} in cabinet {Cabinet}; stopping the upload", plannedDocument.Path, cabinetModel.Name);
+                    failed.AddRange(plan.Documents.Skip(i).Select(d => new UploadReportEntry { Path = d.Path, Reason = NotStoredReason }));
+                    var message = $"The upload stopped because of a server error. {stored.Count} document(s) were stored; "
+                        + $"{plan.Documents.Count - i} were not stored. See the report; upload only the documents that were not stored.";
+                    throw new UploadFailedException(message, report, ex);
+                }
+            }
+
+            return stored.Count == 0
+                ? throw new UploadFailedException(NothingStoredMessage, report)
+                : report;
+        }
+        catch (Exception ex)
+        {
+            logger.LogMethodError(ex, "Error UploadHandler.UploadAsync with params cabinet={Cabinet}, field={Field}, zipFileName={ZipFileName}",
+                cabinet, field, zipFileName);
+            throw;
+        }
+        finally
+        {
+            logger.LogInformation("End UploadHandler.UploadAsync with params cabinet={Cabinet}, field={Field}, zipFileName={ZipFileName}; stored={StoredCount}, skipped={SkippedCount}, failed={FailedCount}",
+                cabinet, field, zipFileName,
+                report?.Stored.Count, report?.Skipped.Count, report?.Failed.Count);
+        }
     }
 
     private static async Task<ZipArchive> OpenZipAsync(Stream zip, CancellationToken cancellationToken)
@@ -128,6 +147,8 @@ public class UploadHandler(
     {
         var documentId = Guid.CreateVersion7();
         var parts = new List<Part>();
+        logger.LogDebug("Start UploadHandler.StoreAsync with params cabinet={Cabinet}, path={Path}, parts={PartCount}",
+            cabinet, plannedDocument.Path, plannedDocument.Parts.Count);
         try
         {
             foreach (var plannedPart in plannedDocument.Parts)
@@ -168,6 +189,11 @@ public class UploadHandler(
         {
             DeleteFiles(parts);
             throw;
+        }
+        finally
+        {
+            logger.LogDebug("End UploadHandler.StoreAsync with params cabinet={Cabinet}, path={Path}; documentId={DocumentId}",
+                cabinet, plannedDocument.Path, documentId);
         }
     }
 

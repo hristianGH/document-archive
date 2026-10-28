@@ -1,4 +1,5 @@
 using Archive.Api.Startup;
+using Archive.Core.Cabinets;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.RegisterServices();
 
 var app = builder.Build();
+
+app.Logger.LogInformation("Loaded {CabinetCount} cabinets from {Path}",
+    app.Services.GetRequiredService<CabinetCatalog>().All.Count, app.Configuration["Cabinets:Path"]);
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

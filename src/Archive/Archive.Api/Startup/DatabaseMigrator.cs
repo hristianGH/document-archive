@@ -19,6 +19,7 @@ public class DatabaseMigrator(IServiceScopeFactory scopeFactory, ILogger<Databas
             try
             {
                 await dbContext.Database.MigrateAsync(cancellationToken);
+                logger.LogInformation("Database migrations applied");
                 return;
             }
             catch (Exception ex) when (ex is RetryLimitExceededException or NpgsqlException { IsTransient: true })
