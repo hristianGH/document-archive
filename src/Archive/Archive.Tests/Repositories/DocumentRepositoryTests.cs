@@ -44,7 +44,7 @@ public class DocumentRepositoryTests : IDisposable
         {
             Cabinet = "Invoices",
             FromUtc = Day,
-            ToUtc = Day.AddDays(1),
+            ToUtc = Day.AddDays(1).AddSeconds(-1),
             Page = 2,
             PageSize = 3
         }, CancellationToken.None);

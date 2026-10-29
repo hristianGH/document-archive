@@ -1,4 +1,8 @@
 node_modules/
 dist/
+e2e/
+playwright.config.ts
+test-results/
+playwright-report/
 Dockerfile
 .dockerignore

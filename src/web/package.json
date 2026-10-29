@@ -6,16 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "docker compose -f ../../docker-compose.e2e.yml down --volumes && docker compose -f ../../docker-compose.e2e.yml up --build --detach && docker compose -f ../../docker-compose.e2e.yml logs --follow e2e",
+    "e2e:down": "docker compose -f ../../docker-compose.e2e.yml down --volumes"
   },
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "jszip": "^3.10.2",
     "typescript": "~5.9.2",
     "vite": "^7.1.0"
   }

@@ -63,6 +63,8 @@ nunit-*.xml
 # Web client (src/web)
 node_modules/
 dist/
+test-results/
+playwright-report/
 
 # Local part files (Storage:FilesPath in Development)
 .data/
