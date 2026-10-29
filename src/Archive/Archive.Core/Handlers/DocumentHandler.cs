@@ -3,12 +3,12 @@ using Archive.Core.Cabinets;
 using Archive.Core.Dates;
 using Archive.Core.Documents;
 using Archive.Core.Exceptions;
-using Archive.Core.Logging;
 using Archive.Core.Paging;
 using Archive.Core.Repositories;
 using Archive.Core.Storage;
 using Archive.Core.Validation;
 using Microsoft.Extensions.Logging;
+using Shared.Logging;
 
 namespace Archive.Core.Handlers;
 
@@ -51,12 +51,12 @@ public class DocumentHandler(
         try
         {
             var cabinetName = cabinetHandler.Get(cabinet).Name;
-            var fromUtc = ParseInstant(from, nameof(from));
-            var toUtc = ParseInstant(to, nameof(to));
+            var fromUtc = UtcInstant.TryParseFrom(from, out var parsedFrom) ? parsedFrom : throw InvalidInstant(nameof(from));
+            var toUtc = UtcInstant.TryParseTo(to, out var parsedTo) ? parsedTo : throw InvalidInstant(nameof(to));
 
-            if (fromUtc >= toUtc)
+            if (fromUtc > toUtc)
             {
-                throw new InvalidInputException("'from' must be earlier than 'to'.");
+                throw new InvalidInputException("'from' must not be later than 'to'.");
             }
 
             var size = Math.Min(pageSize, pagingSettings.MaxPageSize);
@@ -175,8 +175,6 @@ public class DocumentHandler(
         };
     }
 
-    private static DateTime ParseInstant(string value, string name) =>
-        UtcInstant.TryParse(value, out var utc)
-            ? utc
-            : throw new InvalidInputException($"'{name}' must be yyyy-MM-ddTHH:mm:ssZ or yyyy-MM-dd (UTC).");
+    private static InvalidInputException InvalidInstant(string name) =>
+        new($"'{name}' must be yyyy-MM-ddTHH:mm:ssZ or yyyy-MM-dd (UTC).");
 }

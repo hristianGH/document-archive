@@ -1,14 +1,12 @@
 using System.Net;
+using Shared.Exceptions;
 
 namespace Archive.Core.Exceptions;
 
-public abstract class ArchiveException : Exception
+public abstract class ArchiveException : ServiceException
 {
     protected ArchiveException(HttpStatusCode statusCode, string message, Exception? innerException = null)
-        : base(message, innerException)
+        : base(statusCode, message, innerException)
     {
-        StatusCode = statusCode;
     }
-
-    public HttpStatusCode StatusCode { get; }
 }

@@ -1,7 +1,7 @@
 using Archive.Core.Cabinets;
 using Archive.Core.Exceptions;
-using Archive.Core.Logging;
 using Microsoft.Extensions.Logging;
+using Shared.Logging;
 
 namespace Archive.Core.Handlers;
 

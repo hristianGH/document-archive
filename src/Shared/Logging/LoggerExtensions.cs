@@ -1,8 +1,8 @@
 using System.Net;
-using Archive.Core.Exceptions;
 using Microsoft.Extensions.Logging;
+using Shared.Exceptions;
 
-namespace Archive.Core.Logging;
+namespace Shared.Logging;
 
 public static class LoggerExtensions
 {
@@ -12,7 +12,7 @@ public static class LoggerExtensions
 
     private static LogLevel GetLevel(Exception exception) => exception switch
     {
-        OperationCanceledException or ArchiveException { StatusCode: < HttpStatusCode.InternalServerError } => LogLevel.Warning,
+        OperationCanceledException or ServiceException { StatusCode: < HttpStatusCode.InternalServerError } => LogLevel.Warning,
         _ => LogLevel.Error
     };
 }

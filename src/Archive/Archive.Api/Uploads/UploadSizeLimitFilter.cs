@@ -1,8 +1,8 @@
 using Archive.Core.Exceptions;
-using Archive.Core.Logging;
 using Archive.Core.Uploads;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Shared.Logging;
 
 namespace Archive.Api.Uploads;
 

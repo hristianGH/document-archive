@@ -62,7 +62,7 @@ public class DocumentRepository(ArchiveDbContext dbContext, ILogger<DocumentRepo
         {
             var documents = dbContext.Documents
                 .AsNoTracking()
-                .Where(d => d.Cabinet == query.Cabinet && d.StoredAt >= query.FromUtc && d.StoredAt < query.ToUtc);
+                .Where(d => d.Cabinet == query.Cabinet && d.StoredAt >= query.FromUtc && d.StoredAt <= query.ToUtc);
 
             var totalCount = await documents.CountAsync(cancellationToken);
             var items = await documents

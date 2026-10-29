@@ -14,6 +14,7 @@ RUN dotnet publish src/Export/Export.Api/Export.Api.csproj -c Release -o /app --
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app .
+ENV Archive__BaseUrl=http://archive:8080
 USER app
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Export.Api.dll"]

@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Archive.Api.Cabinets;
 using Archive.Core.Handlers;
-using Archive.Core.Logging;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Logging;
 using Shared.Models.Cabinets;
 
 namespace Archive.Api.Controllers;

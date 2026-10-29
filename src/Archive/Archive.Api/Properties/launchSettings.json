@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "http": {
@@ -7,8 +7,7 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5099",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ConnectionStrings__Archive": "Host=localhost;Port=5433;Database=archive;Username=archive;Password=Pass1234@"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }

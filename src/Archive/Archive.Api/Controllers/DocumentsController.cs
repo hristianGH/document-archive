@@ -5,8 +5,8 @@ using Archive.Api.Documents;
 using Archive.Api.Uploads;
 using Archive.Core.Dates;
 using Archive.Core.Handlers;
-using Archive.Core.Logging;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Logging;
 using Shared.Models.Documents;
 using Shared.Models.Paging;
 
@@ -62,8 +62,8 @@ public class DocumentsController(IDocumentHandler documentHandler, IUploadHandle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPage(
         string cabinet,
-        [FromQuery, Description("Inclusive. " + UtcInstant.Description)] string from,
-        [FromQuery, Description("Exclusive. " + UtcInstant.Description)] string to,
+        [FromQuery, Description(UtcInstant.FromDescription)] string from,
+        [FromQuery, Description(UtcInstant.ToDescription)] string to,
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
         [FromQuery, Range(1, int.MaxValue), Description("Capped at the configured maximum page size; the response states the size used.")] int pageSize = 5,
         CancellationToken cancellationToken = default)
