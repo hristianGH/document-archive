@@ -65,8 +65,9 @@ public class ExportHandler(
             export.Cabinet, export.Field, export.From, export.To);
         try
         {
+            using var body = new SyncBufferingStream(output);
             // Disposed only on success: disposing writes the table of contents, which would make a broken export look complete.
-            var zip = await ZipArchive.CreateAsync(output, ZipArchiveMode.Create, leaveOpen: true, Encoding.UTF8, cancellationToken);
+            var zip = await ZipArchive.CreateAsync(body, ZipArchiveMode.Create, leaveOpen: true, Encoding.UTF8, cancellationToken);
             var rootNames = new ZipNameAllocator();
             var page = export.FirstPage;
             while (true)
@@ -76,7 +77,7 @@ public class ExportHandler(
                     var document = await archiveClient.GetDocumentAsync(id, cancellationToken);
                     foreach (var entry in ZipLayout.Plan(document, rootNames))
                     {
-                        await WriteEntryAsync(zip, entry, document.Id, cancellationToken);
+                        await WriteEntryAsync(zip, body, entry, document.Id, cancellationToken);
                     }
 
                     documentIds.Add(id);
@@ -97,6 +98,7 @@ public class ExportHandler(
             }
 
             await zip.DisposeAsync();
+            await body.DrainAsync(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -111,9 +113,8 @@ public class ExportHandler(
         }
     }
 
-    private async Task WriteEntryAsync(ZipArchive zip, ZipEntryPlan entry, Guid documentId, CancellationToken cancellationToken)
+    private async Task WriteEntryAsync(ZipArchive zip, SyncBufferingStream body, ZipEntryPlan entry, Guid documentId, CancellationToken cancellationToken)
     {
-        // Every entry is opened, folders too: an entry never opened is written synchronously, which Kestrel rejects.
         var entryStream = await zip.CreateEntry(entry.Name).OpenAsync(cancellationToken);
         if (entry.PartId is { } partId)
         {
@@ -121,5 +122,6 @@ public class ExportHandler(
         }
 
         await entryStream.DisposeAsync();
+        await body.DrainAsync(cancellationToken);
     }
 }

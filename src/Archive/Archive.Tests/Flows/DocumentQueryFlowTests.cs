@@ -18,14 +18,28 @@ public class DocumentQueryFlowTests : FlowTestBase
 
     [Theory]
     [Trait("Rule", "R14")]
-    [InlineData("2026-10-02", "2026-10-03", 4, 7)]
-    [InlineData("2026-10-02T06:00:00Z", "2026-10-02T18:00:00Z", 5, 6)]
-    public async Task From_is_inclusive_and_to_is_exclusive(string from, string to, int first, int last)
+    [InlineData("2026-10-02", "2026-10-02", 4, 7)]
+    [InlineData("2026-10-01T18:00:00Z", "2026-10-02", 3, 7)]
+    [InlineData("2026-10-02T06:00:00Z", "2026-10-02T18:00:00Z", 5, 7)]
+    [InlineData("2026-10-02T06:00:00Z", "2026-10-02T06:00:00Z", 5, 5)]
+    public async Task From_and_to_are_both_inclusive(string from, string to, int first, int last)
     {
         var page = await GetPageAsync("Invoices", from, to);
 
         Assert.Equal(invoices[first..(last + 1)].Select(d => d.Id), page.Items.Select(i => i.Id));
         Assert.All(page.Items, i => Assert.Equal("Invoices", i.Cabinet));
+    }
+
+    [Fact]
+    [Trait("Rule", "R14")]
+    public async Task A_date_only_to_ends_at_the_last_second_of_the_day()
+    {
+        var lastSecond = NewDocument("Invoices", new DateTime(2026, 10, 5, 23, 59, 59, DateTimeKind.Utc));
+        Factory.Repository.Seed(lastSecond, NewDocument("Invoices", new DateTime(2026, 10, 6, 0, 0, 0, DateTimeKind.Utc)));
+
+        var page = await GetPageAsync("Invoices", "2026-10-05", "2026-10-05");
+
+        Assert.Equal([lastSecond.Id], page.Items.Select(i => i.Id));
     }
 
     [Fact]
@@ -44,7 +58,8 @@ public class DocumentQueryFlowTests : FlowTestBase
 
     [Theory]
     [Trait("Rule", "R14")]
-    [InlineData("2026-10-03", "2026-10-03", "'from' must be earlier than 'to'.")]
+    [InlineData("2026-10-04", "2026-10-03", "'from' must not be later than 'to'.")]
+    [InlineData("2026-10-03T12:00:01Z", "2026-10-03T12:00:00Z", "'from' must not be later than 'to'.")]
     [InlineData("02-10-2026", "2026-10-03", "'from' must be yyyy-MM-ddTHH:mm:ssZ or yyyy-MM-dd (UTC).")]
     [InlineData("2026-10-02", "2026-10-03T00:00:00", "'to' must be yyyy-MM-ddTHH:mm:ssZ or yyyy-MM-dd (UTC).")]
     [InlineData("2026-10-02", "2026-10-03T02:00:00+02:00", "'to' must be yyyy-MM-ddTHH:mm:ssZ or yyyy-MM-dd (UTC).")]

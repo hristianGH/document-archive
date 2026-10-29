@@ -33,7 +33,7 @@ public class FakeDocumentRepository : IDocumentRepository
     public Task<PagedList<DocumentSummary>> GetPageAsync(DocumentQuery query, CancellationToken cancellationToken)
     {
         var matches = documents.Values
-            .Where(d => d.Cabinet == query.Cabinet && d.StoredAt >= query.FromUtc && d.StoredAt < query.ToUtc)
+            .Where(d => d.Cabinet == query.Cabinet && d.StoredAt >= query.FromUtc && d.StoredAt <= query.ToUtc)
             .OrderBy(d => d.StoredAt)
             .ThenBy(d => d.Id)
             .ToList();
