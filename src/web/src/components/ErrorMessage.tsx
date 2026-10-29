@@ -3,10 +3,10 @@ import type { Problem } from '../api/http';
 export function ErrorMessage({ problem }: { problem: Problem }) {
   const fieldErrors = Object.entries(problem.errors ?? {});
   return (
-    <div className="error" role="alert">
-      <p>{problem.detail}</p>
+    <div className="callout callout-error">
+      <p className="callout-title">{problem.detail}</p>
       {fieldErrors.length > 0 && (
-        <ul>
+        <ul className="callout-list">
           {fieldErrors.flatMap(([field, messages]) =>
             messages.map(message => (
               <li key={`${field}:${message}`}>

@@ -44,6 +44,10 @@ export function toProblem(error: unknown): Problem {
   return { status: 0, detail: error instanceof Error ? error.message : String(error) };
 }
 
+export function summarize(problem: Problem): string {
+  return Object.values(problem.errors ?? {}).flat()[0] ?? problem.detail;
+}
+
 async function readProblem(response: Response): Promise<Problem> {
   const fallback = `The request failed with status ${response.status}${response.statusText ? ` (${response.statusText})` : ''}.`;
   if (!(response.headers.get('Content-Type') ?? '').includes('json')) {

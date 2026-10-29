@@ -22,7 +22,7 @@ public static class MarkerFieldValidator
 
         if (field.MaxLength is { } maxLength && maxLength < marker.Length)
         {
-            throw new InvalidInputException($"Field '{field.Name}' holds at most {maxLength} characters; the marker '{marker}' needs {marker.Length}.");
+            throw new InvalidInputException($"The export marker '{marker}' is {marker.Length} characters long, but '{field.Label}' ({field.Name}) holds at most {maxLength}. Choose a text field that holds at least {marker.Length} characters.");
         }
 
         return field;

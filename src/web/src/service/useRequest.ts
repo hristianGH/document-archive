@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { toProblem, type Problem } from '../api/http';
+import { summarize, toProblem, type Problem } from '../api/http';
+import { useToast } from '../components/Toast';
 
 export type RequestState<T> =
   | { status: 'idle' }
@@ -8,9 +9,10 @@ export type RequestState<T> =
   | { status: 'error'; problem: Problem };
 
 // The ref blocks a second start before React re-renders the disabled button.
-export function useRequest<TArgs extends unknown[], TResult>(action: (...args: TArgs) => Promise<TResult>) {
+export function useRequest<TArgs extends unknown[], TResult>(action: (...args: TArgs) => Promise<TResult>, errorTitle: string) {
   const inFlight = useRef(false);
   const [state, setState] = useState<RequestState<TResult>>({ status: 'idle' });
+  const showToast = useToast();
 
   const run = useCallback(async (...args: TArgs) => {
     if (inFlight.current) {
@@ -22,11 +24,13 @@ export function useRequest<TArgs extends unknown[], TResult>(action: (...args: T
     try {
       setState({ status: 'success', data: await action(...args) });
     } catch (error) {
-      setState({ status: 'error', problem: toProblem(error) });
+      const problem = toProblem(error);
+      setState({ status: 'error', problem });
+      showToast({ title: errorTitle, message: summarize(problem) });
     } finally {
       inFlight.current = false;
     }
-  }, [action]);
+  }, [action, errorTitle, showToast]);
 
   return { state, run };
 }

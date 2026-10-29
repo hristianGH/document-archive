@@ -31,8 +31,8 @@ public class MarkerFieldValidatorTests
 
     [Theory]
     [Trait("Rule", "X13")]
-    [InlineData("InvoiceNumber", "Field 'InvoiceNumber' holds at most 20 characters; the marker 'Exported on 2026-10-28' needs 22.")]
-    [InlineData("Status", "Field 'Status' holds at most 12 characters; the marker 'Exported on 2026-10-28' needs 22.")]
+    [InlineData("InvoiceNumber", "The export marker 'Exported on 2026-10-28' is 22 characters long, but 'Invoice number' (InvoiceNumber) holds at most 20. Choose a text field that holds at least 22 characters.")]
+    [InlineData("Status", "The export marker 'Exported on 2026-10-28' is 22 characters long, but 'Status' (Status) holds at most 12. Choose a text field that holds at least 22 characters.")]
     [InlineData("Amount", "Field 'Amount' is not a text field.")]
     [InlineData("InvoiceDate", "Field 'InvoiceDate' is not a text field.")]
     [InlineData("ApprovedBy", "Field 'ApprovedBy' is not writable.")]

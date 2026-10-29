@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { ToastProvider } from './components/Toast';
 import { loadConfig } from './config';
 import './styles.css';
 
@@ -10,8 +11,10 @@ loadConfig()
   .then(() =>
     root.render(
       <StrictMode>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </StrictMode>
     )
   )
-  .catch((error: Error) => root.render(<p className="error">{error.message}</p>));
+  .catch((error: Error) => root.render(<p className="callout callout-error boot-error">{error.message}</p>));
