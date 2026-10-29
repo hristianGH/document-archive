@@ -60,5 +60,9 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# Web client (src/web)
+node_modules/
+dist/
+
 # Local part files (Storage:FilesPath in Development)
 .data/

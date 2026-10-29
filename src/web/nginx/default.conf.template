@@ -1,0 +1,31 @@
+map $request_uri $service_path {
+    ~^/api/(?:archive|export)(?<rest>/.*)$ $rest;
+}
+
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+
+    # Service names are resolved per request, so nginx starts even when the services are not up yet.
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
+
+    location = /config.json {
+        add_header Cache-Control "no-store";
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+
+    location /api/archive/ {
+        proxy_pass ${ARCHIVE_UPSTREAM}$service_path;
+        client_max_body_size 2m;
+        proxy_request_buffering off;
+    }
+
+    location /api/export/ {
+        proxy_pass ${EXPORT_UPSTREAM}$service_path;
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+    }
+}
